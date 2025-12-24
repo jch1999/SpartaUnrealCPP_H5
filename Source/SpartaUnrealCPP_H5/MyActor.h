@@ -23,4 +23,11 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void Move();
+	void Turn();
+
+private:
+	float NowTime;
+	float Delay;
+	int MoveCnt;
 };
