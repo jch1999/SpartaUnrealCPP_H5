@@ -26,6 +26,8 @@ public:
 	void Move();
 	void Turn();
 
+	void PlayRandomEvent();
+
 private:
 	float NowTime;
 	float Delay;

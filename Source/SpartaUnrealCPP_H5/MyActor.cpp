@@ -36,6 +36,10 @@ void AMyActor::Tick(float DeltaTime) {
             // Reset
             MoveCnt++;
             NowTime = 0.0f;
+
+            if (FMath::Rand() % 2 == 0) {
+                PlayRandomEvent();
+            }
         }
     }
 }
@@ -54,6 +58,33 @@ void AMyActor::Turn() {
 
     if (GEngine) {
         FString DebugMessage = FString::Printf(TEXT("Rotate : %s"), *(GetActorRotation().ToString()));
+        GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Cyan, DebugMessage);
+    }
+}
+
+void AMyActor::PlayRandomEvent()
+{
+    if (GEngine) {
+        FString DebugMessage;
+        GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Cyan, TEXT("RandomEvent!"));
+        switch (FMath::Rand()%3)
+        {
+            case 1:
+            {
+                DebugMessage = FString::Printf(TEXT("CurrentTime : %d"), GetWorld()->GetTimeSeconds());
+            }
+            break;
+            case 2:
+            {
+                DebugMessage = "Pikaboo!";
+            }
+            break;
+            default:
+            {
+                DebugMessage = "404 Not Found.";
+            }
+            break;
+        }
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Cyan, DebugMessage);
     }
 }
