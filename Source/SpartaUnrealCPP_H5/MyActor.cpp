@@ -3,6 +3,9 @@
 
 #include "MyActor.h"
 #include "Engine/Engine.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Components/StaticMeshComponent.h"
+#include "PhysicsEngine/PhysicsHandleComponent.h"
 
 // Sets default values
 AMyActor::AMyActor() {
@@ -11,16 +14,34 @@ AMyActor::AMyActor() {
     Delay = 2.0f;
     NowTime = 0.0f;
     MoveCnt = 0;
+    bEnablePhysicsHandle = false;
+    RedMaterial = nullptr;
+    BlueMaterial = nullptr;
+    YellowMaterial = nullptr;
+
+    PhysicsHandle =
+        CreateDefaultSubobject<UPhysicsHandleComponent>(TEXT("PhysicsHandle"));
 }
 
 // Called when the game starts or when spawned
 void AMyActor::BeginPlay() {
-    Super::BeginPlay();
-    SetActorLocation(FVector(0, 50, 0));
+  Super::BeginPlay();
+  SetActorLocation(FVector(0, 50, 0));
 
-    if (GEngine) {
-        GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Cyan, TEXT("Hello World!"));
-    }
+  UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
+      GetComponentByClass(UStaticMeshComponent::StaticClass()));
+  if (MeshComp) {
+    RedMaterial =
+        UMaterialInstanceDynamic::Create(MeshComp->GetMaterial(0), this);
+    RedMaterial->SetVectorParameterValue("Color", FVector4(1.0f, 0.0f, 0.0f));
+    BlueMaterial =
+        UMaterialInstanceDynamic::Create(MeshComp->GetMaterial(0), this);
+    BlueMaterial->SetVectorParameterValue("Color", FVector4(0.0f, 0.0f, 1.0f));
+    YellowMaterial =
+        UMaterialInstanceDynamic::Create(MeshComp->GetMaterial(0), this);
+    YellowMaterial->SetVectorParameterValue("Color",
+                                            FVector4(1.0f, 1.0f, 0.0f));
+  }
 }
 
 // Called every frame
@@ -39,53 +60,96 @@ void AMyActor::Tick(float DeltaTime) {
 
             if (FMath::Rand() % 2 == 0) {
                 PlayRandomEvent();
+            } else {
+              PrintScreenMessage(3.0f, FColor::Red, TEXT("No RandomEvent!"));
             }
         }
+    } else {  // Physics Handle로 PlayerController에서 일정 위치를 유지하며 따라다니기
+      
     }
 }
 
 void AMyActor::Move() {
-    SetActorLocation(FVector(FMath::Rand() % 150, FMath::Rand() % 150, FMath::Rand() % 150));
+  SetActorLocation(
+      FVector(FMath::Rand() % 150, FMath::Rand() % 150, FMath::Rand() % 150));
 
-    if (GEngine) {
-        FString DebugMessage = FString::Printf(TEXT("Move : %s"), *(GetActorLocation().ToString()));
-        GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Cyan, DebugMessage);
-    }
+  FString DebugMessage =
+      FString::Printf(TEXT("Move : %s"), *(GetActorLocation().ToString()));
+  PrintScreenMessage(3.0f, FColor::Purple, DebugMessage);
 }
 
 void AMyActor::Turn() {
-    SetActorRotation(FRotator(FMath::Rand() % 360, FMath::Rand() % 360, FMath::Rand() % 360));
+  SetActorRotation(
+      FRotator(FMath::Rand() % 360, FMath::Rand() % 360, FMath::Rand() % 360));
 
-    if (GEngine) {
-        FString DebugMessage = FString::Printf(TEXT("Rotate : %s"), *(GetActorRotation().ToString()));
-        GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Cyan, DebugMessage);
-    }
+  FString DebugMessage =
+      FString::Printf(TEXT("Rotate : %s"), *(GetActorRotation().ToString()));
+  PrintScreenMessage(3.0f, FColor::Yellow, DebugMessage);
 }
 
-void AMyActor::PlayRandomEvent()
-{
-    if (GEngine) {
-        FString DebugMessage;
-        GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Cyan, TEXT("RandomEvent!"));
-        switch (FMath::Rand()%3)
-        {
-            case 1:
-            {
-                DebugMessage = FString::Printf(TEXT("CurrentTime : %d"), GetWorld()->GetTimeSeconds());
-            }
-            break;
-            case 2:
-            {
-                DebugMessage = "Pikaboo!";
-            }
-            break;
-            default:
-            {
-                DebugMessage = "404 Not Found.";
-            }
-            break;
+void AMyActor::PlayRandomEvent() {
+  PrintScreenMessage(3.0f, FColor::Cyan, TEXT("Play RandomEvent!"));
+
+  FString DebugMessage;
+  switch (FMath::Rand() % 4) {
+    case 1: {
+      DebugMessage = FString::Printf(TEXT("CurrentTime : %d"),
+                                     GetWorld()->GetTimeSeconds());
+    } break;
+    case 2: {
+      DebugMessage = "Pikaboo!";
+    } break;
+    case 3: {
+      ChangeColor();
+    } break;
+    default: {
+      DebugMessage = "404 Not Found.";
+    } break;
+  }
+  PrintScreenMessage(3.0f, FColor::Cyan, DebugMessage);
+}
+
+void AMyActor::ChangeColor() {
+  UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
+      GetComponentByClass(UStaticMeshComponent::StaticClass()));
+
+  if (MeshComp) {
+    switch (FMath::Rand() % 3) {
+      case 0: {
+        if (RedMaterial) {
+          MeshComp->SetMaterial(0, RedMaterial);
+          PrintScreenMessage(3.0f, FColor::Red, TEXT("Color Change: Red"));
         }
-        GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Cyan, DebugMessage);
+      } break;
+      case 1: {
+        if (BlueMaterial) {
+          MeshComp->SetMaterial(0, BlueMaterial);
+          PrintScreenMessage(3.0f, FColor::Blue, TEXT("Color Change: Blue"));
+        }
+      } break;
+      case 2: {
+        if (YellowMaterial) {
+          MeshComp->SetMaterial(0, YellowMaterial);
+          PrintScreenMessage(3.0f, FColor::Yellow,
+                             TEXT("Color Change: Yellow"));
+        }
+      } break;
+      default: {
+      } break;
     }
+  }
+}
+
+void AMyActor::SetEnablePhysicsHandle(bool enabled) {
+    bEnablePhysicsHandle = enabled;
+}
+
+bool AMyActor::GetEnablePhysicsHandle() {
+    return bEnablePhysicsHandle; }
+
+void AMyActor::PrintScreenMessage(float LifeTime, const FColor& Color, const FString& Message) {
+  if (GEngine) {
+    GEngine->AddOnScreenDebugMessage(-1, LifeTime, Color, Message);
+  }
 }
 
