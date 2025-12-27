@@ -13,8 +13,6 @@ AMyActor::AMyActor() {
   // Set this actor to call Tick() every frame.  You can turn this off to
   // improve performance if you don't need it.
   PrimaryActorTick.bCanEverTick = true;
-  Delay = 2.0f;
-  NowTime = 0.0f;
   MoveCnt = 0;
   bEnablePhysicsHandle = false;
   ColorMaterial = nullptr;
@@ -47,33 +45,15 @@ void AMyActor::BeginPlay() {
         MeshComp->SetMaterial(0, ColorMaterial);
     }
   }
+  if (GetWorld()) {
+    GetWorld()->GetTimerManager().SetTimer(
+        EventTimer, this, &AMyActor::MoveAndTurn, 2.0f, true, 0.0f);
+  }
 }
 
 // Called every frame
 void AMyActor::Tick(float DeltaTime) {
   Super::Tick(DeltaTime);
-
-  if (MoveCnt < 10) {
-    NowTime += DeltaTime;
-    if (Delay <= NowTime) {
-      Move();
-      Turn();
-
-      // Reset
-      ++MoveCnt;
-      NowTime = 0.0f;
-
-      if (FMath::Rand() % 2 == 0) {
-        PlayRandomEvent();
-      } else {
-        PrintScreenMessage(3.0f, FColor::Red, TEXT("No RandomEvent!"));
-      }
-    }
-    if (MoveCnt == 10) SetEnablePhysicsHandle(true);
-  } else if (!bEnablePhysicsHandle) {
-    SetEnablePhysicsHandle(true);
-    PrintScreenMessage(5.0f, FColor::Orange, TEXT("Physics Handle Enabled!"));
-  }
 
   if (bEnablePhysicsHandle) {
     PlayPhysicsHandle();
@@ -96,6 +76,28 @@ void AMyActor::Turn() {
   FString DebugMessage =
       FString::Printf(TEXT("Rotate : %s"), *(GetActorRotation().ToString()));
   PrintScreenMessage(3.0f, FColor::Yellow, DebugMessage);
+}
+
+void AMyActor::MoveAndTurn() {
+  if (MoveCnt < 10) {
+    Move();
+    Turn();
+
+    ++MoveCnt;
+
+    if (FMath::Rand() % 2 == 0) {
+      PlayRandomEvent();
+    } else {
+      PrintScreenMessage(3.0f, FColor::Red, TEXT("No RandomEvent!"));
+    }
+    if (MoveCnt == 10) SetEnablePhysicsHandle(true);
+  } else if (!bEnablePhysicsHandle) {
+    SetEnablePhysicsHandle(true);
+    PrintScreenMessage(5.0f, FColor::Orange, TEXT("Physics Handle Enabled!"));
+    if (GetWorld()) {
+      GetWorld()->GetTimerManager().ClearTimer(EventTimer);  // 타이머 종료
+    }
+  }
 }
 
 void AMyActor::PlayRandomEvent() {

@@ -25,6 +25,7 @@ public:
 
 	void Move();
 	void Turn();
+    void MoveAndTurn();
 
 	void PlayRandomEvent();
 
@@ -44,11 +45,11 @@ public:
     class UStaticMeshComponent* MeshComp;
 
    private:
-	float NowTime;
-	float Delay;
 	int MoveCnt;
 	bool bEnablePhysicsHandle;
     
 	UPROPERTY(category = "Material", VisibleAnywhere)
     UMaterialInstanceDynamic* ColorMaterial;
+
+	FTimerHandle EventTimer;
 };
