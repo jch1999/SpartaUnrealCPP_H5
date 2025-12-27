@@ -50,9 +50,5 @@ public:
 	bool bEnablePhysicsHandle;
     
 	UPROPERTY(category = "Material", VisibleAnywhere)
-    UMaterialInstanceDynamic* RedMaterial;
-    UPROPERTY(category = "Material", VisibleAnywhere)
-    UMaterialInstanceDynamic* BlueMaterial;
-    UPROPERTY(category = "Material", VisibleAnywhere)
-    UMaterialInstanceDynamic* YellowMaterial;
+    UMaterialInstanceDynamic* ColorMaterial;
 };
