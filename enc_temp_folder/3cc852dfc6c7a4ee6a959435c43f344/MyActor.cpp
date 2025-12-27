@@ -43,9 +43,7 @@ void AMyActor::BeginPlay() {
   if (MeshComp) {
     ColorMaterial =
         UMaterialInstanceDynamic::Create(MeshComp->GetMaterial(0), this);
-    if (ColorMaterial) {
-        MeshComp->SetMaterial(0, ColorMaterial);
-    }
+    ColorMaterial->SetVectorParameterValue("Color", FVector4(1.0f, 1.0f, 1.0f));
   }
 }
 
@@ -102,7 +100,7 @@ void AMyActor::PlayRandomEvent() {
   PrintScreenMessage(3.0f, FColor::Cyan, TEXT("Play RandomEvent!"));
 
   FString DebugMessage;
-  switch (FMath::Rand() % 3) {
+  switch (FMath::Rand() % 4) {
     case 1: {
       DebugMessage = FString::Printf(TEXT("CurrentTime : %d"),
                                      GetWorld()->GetTimeSeconds());
@@ -110,12 +108,14 @@ void AMyActor::PlayRandomEvent() {
     case 2: {
       DebugMessage = "Pikaboo!";
     } break;
+    case 3: {
+      ChangeColor();
+    } break;
     default: {
       DebugMessage = "404 Not Found.";
     } break;
   }
   PrintScreenMessage(3.0f, FColor::Cyan, DebugMessage);
-  ChangeColor();
 }
 
 void AMyActor::ChangeColor() {

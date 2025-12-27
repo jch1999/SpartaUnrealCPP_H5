@@ -28,8 +28,27 @@ public:
 
 	void PlayRandomEvent();
 
-private:
+	void ChangeColor();
+
+	void SetEnablePhysicsHandle(bool enabled);
+    bool GetEnablePhysicsHandle();
+    void PlayPhysicsHandle();
+
+	void PrintScreenMessage(float LifeTime, const FColor& Color,
+            const FString& Message);
+
+   protected:
+    UPROPERTY(VisibleAnywhere)
+    class UPhysicsHandleComponent* PhysicsHandle;
+    UPROPERTY(VisibleAnywhere)
+    class UStaticMeshComponent* MeshComp;
+
+   private:
 	float NowTime;
 	float Delay;
 	int MoveCnt;
+	bool bEnablePhysicsHandle;
+    
+	UPROPERTY(category = "Material", VisibleAnywhere)
+    UMaterialInstanceDynamic* ColorMaterial;
 };
