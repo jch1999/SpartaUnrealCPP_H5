@@ -1,26 +1,35 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "MyActor.h"
-#include "Engine/Engine.h"
-#include "Materials/MaterialInstanceDynamic.h"
+
 #include "Components/StaticMeshComponent.h"
+#include "Engine/Engine.h"
+#include "GameFramework/PlayerController.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 
 // Sets default values
 AMyActor::AMyActor() {
-    // Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-    PrimaryActorTick.bCanEverTick = true;
-    Delay = 2.0f;
-    NowTime = 0.0f;
-    MoveCnt = 0;
-    bEnablePhysicsHandle = false;
-    RedMaterial = nullptr;
-    BlueMaterial = nullptr;
-    YellowMaterial = nullptr;
+  // Set this actor to call Tick() every frame.  You can turn this off to
+  // improve performance if you don't need it.
+  PrimaryActorTick.bCanEverTick = true;
+  Delay = 2.0f;
+  NowTime = 0.0f;
+  MoveCnt = 0;
+  bEnablePhysicsHandle = false;
+  RedMaterial = nullptr;
+  BlueMaterial = nullptr;
+  YellowMaterial = nullptr;
 
-    PhysicsHandle =
-        CreateDefaultSubobject<UPhysicsHandleComponent>(TEXT("PhysicsHandle"));
+  PhysicsHandle =
+      CreateDefaultSubobject<UPhysicsHandleComponent>(TEXT("PhysicsHandle"));
+  MeshComp = Cast<UStaticMeshComponent>(
+      GetComponentByClass(UStaticMeshComponent::StaticClass()));
+  if (MeshComp) {
+    PrintScreenMessage(3.0f, FColor::White, TEXT("MeshComp Found!"));
+  } else {
+    PrintScreenMessage(3.0f, FColor::White, TEXT("MeshComp Not Found!"));
+  }
 }
 
 // Called when the game starts or when spawned
@@ -28,8 +37,11 @@ void AMyActor::BeginPlay() {
   Super::BeginPlay();
   SetActorLocation(FVector(0, 50, 0));
 
-  UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
-      GetComponentByClass(UStaticMeshComponent::StaticClass()));
+  if (MeshComp == nullptr) {
+    MeshComp = Cast<UStaticMeshComponent>(
+        GetComponentByClass(UStaticMeshComponent::StaticClass()));
+  }
+
   if (MeshComp) {
     RedMaterial =
         UMaterialInstanceDynamic::Create(MeshComp->GetMaterial(0), this);
@@ -46,27 +58,33 @@ void AMyActor::BeginPlay() {
 
 // Called every frame
 void AMyActor::Tick(float DeltaTime) {
-    Super::Tick(DeltaTime);
+  Super::Tick(DeltaTime);
 
-    if (MoveCnt < 10) {
-        NowTime += DeltaTime;
-        if (Delay <= NowTime) {
-            Move();
-            Turn();
+  if (MoveCnt < 10) {
+    NowTime += DeltaTime;
+    if (Delay <= NowTime) {
+      Move();
+      Turn();
 
-            // Reset
-            MoveCnt++;
-            NowTime = 0.0f;
+      // Reset
+      ++MoveCnt;
+      NowTime = 0.0f;
 
-            if (FMath::Rand() % 2 == 0) {
-                PlayRandomEvent();
-            } else {
-              PrintScreenMessage(3.0f, FColor::Red, TEXT("No RandomEvent!"));
-            }
-        }
-    } else {  // Physics Handle로 PlayerController에서 일정 위치를 유지하며 따라다니기
-      
+      if (FMath::Rand() % 2 == 0) {
+        PlayRandomEvent();
+      } else {
+        PrintScreenMessage(3.0f, FColor::Red, TEXT("No RandomEvent!"));
+      }
     }
+    if (MoveCnt == 10) SetEnablePhysicsHandle(true);
+  } else if (!bEnablePhysicsHandle) {
+    SetEnablePhysicsHandle(true);
+    PrintScreenMessage(5.0f, FColor::Orange, TEXT("Physics Handle Enabled!"));
+  }
+
+  if (bEnablePhysicsHandle) {
+    PlayPhysicsHandle();
+  }
 }
 
 void AMyActor::Move() {
@@ -110,9 +128,6 @@ void AMyActor::PlayRandomEvent() {
 }
 
 void AMyActor::ChangeColor() {
-  UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
-      GetComponentByClass(UStaticMeshComponent::StaticClass()));
-
   if (MeshComp) {
     switch (FMath::Rand() % 3) {
       case 0: {
@@ -141,15 +156,42 @@ void AMyActor::ChangeColor() {
 }
 
 void AMyActor::SetEnablePhysicsHandle(bool enabled) {
-    bEnablePhysicsHandle = enabled;
+  bEnablePhysicsHandle = enabled;
+  if (MeshComp) {
+    MeshComp->SetSimulatePhysics(enabled);
+  }
 }
 
-bool AMyActor::GetEnablePhysicsHandle() {
-    return bEnablePhysicsHandle; }
+bool AMyActor::GetEnablePhysicsHandle() { return bEnablePhysicsHandle; }
 
-void AMyActor::PrintScreenMessage(float LifeTime, const FColor& Color, const FString& Message) {
+void AMyActor::PlayPhysicsHandle() {
+  if (GetWorld()) {
+    if ((PhysicsHandle && MeshComp) && bEnablePhysicsHandle) {
+      APlayerController* Controller = GetWorld()->GetFirstPlayerController();
+      if (Controller) {
+        FRotator ControlRotaion = Controller->GetControlRotation();
+        FVector ViewLocation;
+        FRotator ViewRotation;
+        Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
+        FVector GrabLocaion = ViewLocation + (ViewRotation.Vector() * 150.0f);
+        //  FVector GrabLocaion = Controller->GetPawn()->GetActorLocation() +
+        //                      ControlRotaion.Vector() * 150.0f;
+
+        if (PhysicsHandle->GrabbedComponent == nullptr) {
+          PhysicsHandle->GrabComponentAtLocation(
+              MeshComp, NAME_None, MeshComp->GetComponentLocation());
+
+        } else {
+          PhysicsHandle->SetTargetLocation(GrabLocaion);
+        }
+      }
+    }
+  }
+}
+
+void AMyActor::PrintScreenMessage(float LifeTime, const FColor& Color,
+                                  const FString& Message) {
   if (GEngine) {
     GEngine->AddOnScreenDebugMessage(-1, LifeTime, Color, Message);
   }
 }
-

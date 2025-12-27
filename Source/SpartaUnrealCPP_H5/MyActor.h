@@ -32,6 +32,7 @@ public:
 
 	void SetEnablePhysicsHandle(bool enabled);
     bool GetEnablePhysicsHandle();
+    void PlayPhysicsHandle();
 
 	void PrintScreenMessage(float LifeTime, const FColor& Color,
             const FString& Message);
@@ -39,6 +40,8 @@ public:
    protected:
     UPROPERTY(VisibleAnywhere)
     class UPhysicsHandleComponent* PhysicsHandle;
+    UPROPERTY(VisibleAnywhere)
+    class UStaticMeshComponent* MeshComp;
 
    private:
 	float NowTime;
