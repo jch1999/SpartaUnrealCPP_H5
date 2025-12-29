@@ -14,24 +14,19 @@ AMyActor::AMyActor() {
   // improve performance if you don't need it.
   PrimaryActorTick.bCanEverTick = true;
   MoveCnt = 0;
+  EventCnt = 0;
   bEnablePhysicsHandle = false;
   ColorMaterial = nullptr;
 
   PhysicsHandle =
       CreateDefaultSubobject<UPhysicsHandleComponent>(TEXT("PhysicsHandle"));
-  /*MeshComp = Cast<UStaticMeshComponent>(
-      GetComponentByClass(UStaticMeshComponent::StaticClass()));
-  if (MeshComp) {
-    PrintScreenMessage(3.0f, FColor::White, TEXT("MeshComp Found!"));
-  } else {
-    PrintScreenMessage(3.0f, FColor::White, TEXT("MeshComp Not Found!"));
-  }*/
 }
 
 // Called when the game starts or when spawned
 void AMyActor::BeginPlay() {
   Super::BeginPlay();
   SetActorLocation(FVector(0, 50, 0));
+  StartLocation = GetActorLocation();
 
   if (MeshComp == nullptr) {
     MeshComp = Cast<UStaticMeshComponent>(
@@ -61,17 +56,44 @@ void AMyActor::Tick(float DeltaTime) {
 }
 
 void AMyActor::Move() {
-  SetActorLocation(
-      FVector(FMath::Rand() % 150, FMath::Rand() % 150, FMath::Rand() % 150));
+  PrevLocation = GetActorLocation();
+  SetActorLocation(FVector(FMath::RandRange(-150, 150),
+            FMath::RandRange(-150, 150),
+            FMath::RandRange(50, 350)));
 
+  MoveDist += (PrevLocation - GetActorLocation()).Length();
   FString DebugMessage =
       FString::Printf(TEXT("Move : %s"), *(GetActorLocation().ToString()));
   PrintScreenMessage(3.0f, FColor::Purple, DebugMessage);
+
+  // 이벤트 발생을 Move로 이동
+  if (FMath::RandBool()) {
+    PlayRandomEvent();
+  } else {
+    PrintScreenMessage(3.0f, FColor::Red, TEXT("No RandomEvent!"));
+  }
+  MoveCnt++;
+  if (MoveCnt == 10) {
+    FString message = FString::Printf(
+        TEXT("Move and Turn Finished. Event Occured Time: %d, MoveDist: %f, "
+             "Total Move: %s"),
+        EventCnt, MoveDist, *(GetActorLocation() - StartLocation).ToString());
+    PrintScreenMessage(10.0f, FColor::Green, message);
+
+    if (!bEnablePhysicsHandle) {
+      SetEnablePhysicsHandle(true);
+      PrintScreenMessage(5.0f, FColor::Orange, TEXT("Physics Handle Enabled!"));
+    }
+    if (GetWorld()) {
+      GetWorld()->GetTimerManager().ClearTimer(EventTimer);  // 타이머 종료
+    }
+  }
 }
 
 void AMyActor::Turn() {
-  SetActorRotation(
-      FRotator(FMath::Rand() % 360, FMath::Rand() % 360, FMath::Rand() % 360));
+  SetActorRotation(FRotator(FMath::RandRange(-180, 180),
+                            FMath::RandRange(-180, 180),
+                            FMath::RandRange(-180, 180)));
 
   FString DebugMessage =
       FString::Printf(TEXT("Rotate : %s"), *(GetActorRotation().ToString()));
@@ -82,21 +104,6 @@ void AMyActor::MoveAndTurn() {
   if (MoveCnt < 10) {
     Move();
     Turn();
-
-    ++MoveCnt;
-
-    if (FMath::Rand() % 2 == 0) {
-      PlayRandomEvent();
-    } else {
-      PrintScreenMessage(3.0f, FColor::Red, TEXT("No RandomEvent!"));
-    }
-    if (MoveCnt == 10) SetEnablePhysicsHandle(true);
-  } else if (!bEnablePhysicsHandle) {
-    SetEnablePhysicsHandle(true);
-    PrintScreenMessage(5.0f, FColor::Orange, TEXT("Physics Handle Enabled!"));
-    if (GetWorld()) {
-      GetWorld()->GetTimerManager().ClearTimer(EventTimer);  // 타이머 종료
-    }
   }
 }
 
@@ -118,6 +125,7 @@ void AMyActor::PlayRandomEvent() {
   }
   PrintScreenMessage(3.0f, FColor::Cyan, DebugMessage);
   ChangeColor();
+  EventCnt++;
 }
 
 void AMyActor::ChangeColor() {
