@@ -46,8 +46,13 @@ public:
 
    private:
 	int MoveCnt;
+    int EventCnt;
 	bool bEnablePhysicsHandle;
-    
+
+    double MoveDist;
+    FVector StartLocation;
+    FVector PrevLocation;
+
 	UPROPERTY(category = "Material", VisibleAnywhere)
     UMaterialInstanceDynamic* ColorMaterial;
 
